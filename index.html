@@ -93,63 +93,38 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        <p>/**</p>
+        <h2 id="关于-Token-过期问题"><a href="#关于-Token-过期问题" class="headerlink" title="关于 Token 过期问题"></a>关于 Token 过期问题</h2><p>登录成功之后后端会返回两个 Token：</p>
 <ul>
-<li>封装 axios 请求模块<br> */<br> import axios from “axios”;<br> import jsonBig from “json-bigint”;<br> import store from “@/store”;<br> import router from “@/router”;</li>
+<li><code>token</code>：访问令牌，有效期2小时</li>
+<li><code>refresh_token</code>：刷新令牌，有效期14天，用于访问令牌过期之后重新获取新的访问令牌</li>
 </ul>
-<p>// axios.create 方法：复制一个 axios<br>const request = axios.create({<br>  baseURL: “<a target="_blank" rel="noopener" href="http://ttapi.research.itcast.cn/&quot;">http://ttapi.research.itcast.cn/&quot;</a> // 基础路径<br>});</p>
-<p>/**</p>
+<p>我们的项目接口中设定的 <code>Token</code> 有效期是 <code>2 小时</code>，超过有效期服务端会返回 <code>401</code> 表示 Token 无效或过期了。</p>
+<p>为什么过期时间这么短？</p>
 <ul>
-<li>配置处理后端返回数据中超出 js 安全整数范围问题<br> */<br> request.defaults.transformResponse = [<br>   function(data) {<br> try {<br>   return jsonBig.parse(data);<br> } catch (err) {<br>   return {};<br> }<br>   }<br> ];</li>
+<li>为了安全，例如 Token 被别人盗用</li>
 </ul>
-<p>// 请求拦截器<br>request.interceptors.request.use(<br>  function(config) {<br>    const user = store.state.user;<br>    if (user) {<br>      config.headers.Authorization = <code>Bearer $&#123;user.token&#125;</code>;<br>    }<br>    // Do something before request is sent<br>    return config;<br>  },<br>  function(error) {<br>    // Do something with request error<br>    return Promise.reject(error);<br>  }<br>);</p>
-<p>// 响应拦截器<br>request.interceptors.response.use(<br>  // 响应成功进入第1个函数<br>  // 该函数的参数是响应对象<br>  function(response) {<br>    // Any status code that lie within the range of 2xx cause this function to trigger<br>    // Do something with response data<br>    return response;<br>  },<br>  // 响应失败进入第2个函数，该函数的参数是错误对象<br>  async function(error) {<br>    // Any status codes that falls outside the range of 2xx cause this function to trigger<br>    // Do something with response error<br>    // 如果响应码是 401 ，则请求获取新的 token</p>
-<pre><code>// 响应拦截器中的 error 就是那个响应的错误对象
-console.dir(error);
-if (error.response &amp;&amp; error.response.status === 401) &#123;
-  // 校验是否有 refresh_token
-  const user = store.state.user;
-
-  if (!user || !user.refresh_token) &#123;
-    router.push(&quot;/login&quot;);
-
-    // 代码不要往后执行了
-    return;
-  &#125;
-
-  // 如果有refresh_token，则请求获取新的 token
-  try &#123;
-    const res = await axios(&#123;
-      method: &quot;PUT&quot;,
-      url: &quot;http://ttapi.research.itcast.cn/app/v1_0/authorizations&quot;,
-      headers: &#123;
-        Authorization: `Bearer $&#123;user.refresh_token&#125;`
-      &#125;
-    &#125;);
-
-    // 如果获取成功，则把新的 token 更新到容器中
-    console.log(&quot;刷新 token  成功&quot;, res);
-    store.commit(&quot;setUser&quot;, &#123;
-      token: res.data.data.token, // 最新获取的可用 token
-      refresh_token: user.refresh_token // 还是原来的 refresh_token
-    &#125;);
-
-    // 把之前失败的用户请求继续发出去
-    // config 是一个对象，其中包含本次失败请求相关的那些配置信息，例如 url、method 都有
-    // return 把 request 的请求结果继续返回给发请求的具体位置
-    return request(error.config);
-  &#125; catch (err) &#123;
-    // 如果获取失败，直接跳转 登录页
-    console.log(&quot;请求刷线 token 失败&quot;, err);
-    router.push(&quot;/login&quot;);
-  &#125;
-&#125;
-
-return Promise.reject(error);
-</code></pre>
-<p>  }<br>);</p>
-<p>export default request;</p>
-
+<p>过期了怎么办？</p>
+<ul>
+<li>让用户重新登录，用户体验太差了</li>
+<li>使用 <code>refresh_token</code> 解决 <code>token</code> 过期</li>
+</ul>
+<p>如何使用 <code>refresh_token</code> 解决 <code>token</code> 过期？</p>
+<blockquote>
+<p>到课程的后面我们开发的业务功能丰富起来之后，再给大家讲解 Token 过期处理。</p>
+<p>大家需要注意的是<strong>在学习测试的时候如果收到 401 响应码，请重新登录再测试</strong>。</p>
+<p>后续内容可以先不用看：</p>
+</blockquote>
+<p><img src="C:/Users/1327244804/Desktop/vue%E7%A7%BB%E5%8A%A8%E7%AB%AF%E9%A1%B9%E7%9B%AE/%E9%BB%91%E9%A9%AC%E5%A4%B4%E6%9D%A1%E7%A7%BB%E5%8A%A8%E7%AB%AF%E5%8F%91%E9%80%81%E5%8C%85/%E9%BB%91%E9%A9%AC%E5%A4%B4%E6%9D%A1%E7%AC%94%E8%AE%B0-%E6%95%B4%E7%90%86%E6%9B%B4%E6%96%B0/assets/v2-8f29f24dd291ddf46abda5d5ab7bec6c_720w.jpg" alt="img"></p>
+<p>概述：服务器生成token的过程中，会有两个时间，一个是token失效时间，一个是token刷新时间，刷新时间肯定比失效时间长，当用户的 <code>token</code> 过期时，你可以拿着过期的token去换取新的token，来保持用户的登陆状态，当然你这个过期token的过期时间必须在刷新时间之内，如果超出了刷新时间，那么返回的依旧是 401。</p>
+<p>处理流程：</p>
+<ol>
+<li>在axios的拦截器中加入token刷新逻辑</li>
+<li>当用户token过期时，去向服务器请求新的 token</li>
+<li>把旧的token替换为新的token</li>
+<li>然后继续用户当前的请求</li>
+</ol>
+<p>在请求的响应拦截器中统一处理 token 过期：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 封装 axios 请求模块</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">import</span> axios <span class="keyword">from</span> <span class="string">&quot;axios&quot;</span>;</span><br><span class="line"><span class="keyword">import</span> jsonBig <span class="keyword">from</span> <span class="string">&quot;json-bigint&quot;</span>;</span><br><span class="line"><span class="keyword">import</span> store <span class="keyword">from</span> <span class="string">&quot;@/store&quot;</span>;</span><br><span class="line"><span class="keyword">import</span> router <span class="keyword">from</span> <span class="string">&quot;@/router&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// axios.create 方法：复制一个 axios</span></span><br><span class="line"><span class="keyword">const</span> request = axios.create(&#123;</span><br><span class="line">  baseURL: <span class="string">&quot;http://ttapi.research.itcast.cn/&quot;</span> <span class="comment">// 基础路径</span></span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 配置处理后端返回数据中超出 js 安全整数范围问题</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">request.defaults.transformResponse = [</span><br><span class="line">  <span class="function"><span class="keyword">function</span>(<span class="params">data</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> jsonBig.parse(data);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (err) &#123;</span><br><span class="line">      <span class="keyword">return</span> &#123;&#125;;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">];</span><br><span class="line"></span><br><span class="line"><span class="comment">// 请求拦截器</span></span><br><span class="line">request.interceptors.request.use(</span><br><span class="line">  <span class="function"><span class="keyword">function</span>(<span class="params">config</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">const</span> user = store.state.user;</span><br><span class="line">    <span class="keyword">if</span> (user) &#123;</span><br><span class="line">      config.headers.Authorization = <span class="string">`Bearer <span class="subst">$&#123;user.token&#125;</span>`</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Do something before request is sent</span></span><br><span class="line">    <span class="keyword">return</span> config;</span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="function"><span class="keyword">function</span>(<span class="params">error</span>) </span>&#123;</span><br><span class="line">    <span class="comment">// Do something with request error</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">Promise</span>.reject(error);</span><br><span class="line">  &#125;</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 响应拦截器</span></span><br><span class="line">request.interceptors.response.use(</span><br><span class="line">  <span class="comment">// 响应成功进入第1个函数</span></span><br><span class="line">  <span class="comment">// 该函数的参数是响应对象</span></span><br><span class="line">  <span class="function"><span class="keyword">function</span>(<span class="params">response</span>) </span>&#123;</span><br><span class="line">    <span class="comment">// Any status code that lie within the range of 2xx cause this function to trigger</span></span><br><span class="line">    <span class="comment">// Do something with response data</span></span><br><span class="line">    <span class="keyword">return</span> response;</span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="comment">// 响应失败进入第2个函数，该函数的参数是错误对象</span></span><br><span class="line">  <span class="keyword">async</span> <span class="function"><span class="keyword">function</span>(<span class="params">error</span>) </span>&#123;</span><br><span class="line">    <span class="comment">// Any status codes that falls outside the range of 2xx cause this function to trigger</span></span><br><span class="line">    <span class="comment">// Do something with response error</span></span><br><span class="line">    <span class="comment">// 如果响应码是 401 ，则请求获取新的 token</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 响应拦截器中的 error 就是那个响应的错误对象</span></span><br><span class="line">    <span class="built_in">console</span>.dir(error);</span><br><span class="line">    <span class="keyword">if</span> (error.response &amp;&amp; error.response.status === <span class="number">401</span>) &#123;</span><br><span class="line">      <span class="comment">// 校验是否有 refresh_token</span></span><br><span class="line">      <span class="keyword">const</span> user = store.state.user;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (!user || !user.refresh_token) &#123;</span><br><span class="line">        router.push(<span class="string">&quot;/login&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 代码不要往后执行了</span></span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// 如果有refresh_token，则请求获取新的 token</span></span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">const</span> res = <span class="keyword">await</span> axios(&#123;</span><br><span class="line">          method: <span class="string">&quot;PUT&quot;</span>,</span><br><span class="line">          url: <span class="string">&quot;http://ttapi.research.itcast.cn/app/v1_0/authorizations&quot;</span>,</span><br><span class="line">          headers: &#123;</span><br><span class="line">            Authorization: <span class="string">`Bearer <span class="subst">$&#123;user.refresh_token&#125;</span>`</span></span><br><span class="line">          &#125;</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 如果获取成功，则把新的 token 更新到容器中</span></span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">&quot;刷新 token  成功&quot;</span>, res);</span><br><span class="line">        store.commit(<span class="string">&quot;setUser&quot;</span>, &#123;</span><br><span class="line">          token: res.data.data.token, <span class="comment">// 最新获取的可用 token</span></span><br><span class="line">          refresh_token: user.refresh_token <span class="comment">// 还是原来的 refresh_token</span></span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 把之前失败的用户请求继续发出去</span></span><br><span class="line">        <span class="comment">// config 是一个对象，其中包含本次失败请求相关的那些配置信息，例如 url、method 都有</span></span><br><span class="line">        <span class="comment">// return 把 request 的请求结果继续返回给发请求的具体位置</span></span><br><span class="line">        <span class="keyword">return</span> request(error.config);</span><br><span class="line">      &#125; <span class="keyword">catch</span> (err) &#123;</span><br><span class="line">        <span class="comment">// 如果获取失败，直接跳转 登录页</span></span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">&quot;请求刷线 token 失败&quot;</span>, err);</span><br><span class="line">        router.push(<span class="string">&quot;/login&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">Promise</span>.reject(error);</span><br><span class="line">  &#125;</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> request;</span><br></pre></td></tr></table></figure>
       
     </div>
     <footer class="article-footer">
