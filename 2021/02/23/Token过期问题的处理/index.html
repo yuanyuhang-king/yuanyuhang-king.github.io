@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Token过期问题的处理 | 博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="&#x2F;**  封装 axios 请求模块 *&#x2F; import axios from “axios”; import jsonBig from “json-bigint”; import store from “@&#x2F;store”; import router from “@&#x2F;router”;  &#x2F;&#x2F; axios.create 方法：复制一个 axiosconst request &#x3D; axios.crea">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Token过期问题的处理">
+<meta property="og:url" content="http://example.com/2021/02/23/Token%E8%BF%87%E6%9C%9F%E9%97%AE%E9%A2%98%E7%9A%84%E5%A4%84%E7%90%86/index.html">
+<meta property="og:site_name" content="博客">
+<meta property="og:description" content="&#x2F;**  封装 axios 请求模块 *&#x2F; import axios from “axios”; import jsonBig from “json-bigint”; import store from “@&#x2F;store”; import router from “@&#x2F;router”;  &#x2F;&#x2F; axios.create 方法：复制一个 axiosconst request &#x3D; axios.crea">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-02-23T12:21:56.000Z">
+<meta property="article:modified_time" content="2021-02-23T12:22:37.548Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="博客" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">博客</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Token过期问题的处理" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2021/02/23/Token%E8%BF%87%E6%9C%9F%E9%97%AE%E9%A2%98%E7%9A%84%E5%A4%84%E7%90%86/" class="article-date">
+  <time class="dt-published" datetime="2021-02-23T12:21:56.000Z" itemprop="datePublished">2021-02-23</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Token过期问题的处理
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>/**</p>
+<ul>
+<li>封装 axios 请求模块<br> */<br> import axios from “axios”;<br> import jsonBig from “json-bigint”;<br> import store from “@/store”;<br> import router from “@/router”;</li>
+</ul>
+<p>// axios.create 方法：复制一个 axios<br>const request = axios.create({<br>  baseURL: “<a target="_blank" rel="noopener" href="http://ttapi.research.itcast.cn/&quot;">http://ttapi.research.itcast.cn/&quot;</a> // 基础路径<br>});</p>
+<p>/**</p>
+<ul>
+<li>配置处理后端返回数据中超出 js 安全整数范围问题<br> */<br> request.defaults.transformResponse = [<br>   function(data) {<br> try {<br>   return jsonBig.parse(data);<br> } catch (err) {<br>   return {};<br> }<br>   }<br> ];</li>
+</ul>
+<p>// 请求拦截器<br>request.interceptors.request.use(<br>  function(config) {<br>    const user = store.state.user;<br>    if (user) {<br>      config.headers.Authorization = <code>Bearer $&#123;user.token&#125;</code>;<br>    }<br>    // Do something before request is sent<br>    return config;<br>  },<br>  function(error) {<br>    // Do something with request error<br>    return Promise.reject(error);<br>  }<br>);</p>
+<p>// 响应拦截器<br>request.interceptors.response.use(<br>  // 响应成功进入第1个函数<br>  // 该函数的参数是响应对象<br>  function(response) {<br>    // Any status code that lie within the range of 2xx cause this function to trigger<br>    // Do something with response data<br>    return response;<br>  },<br>  // 响应失败进入第2个函数，该函数的参数是错误对象<br>  async function(error) {<br>    // Any status codes that falls outside the range of 2xx cause this function to trigger<br>    // Do something with response error<br>    // 如果响应码是 401 ，则请求获取新的 token</p>
+<pre><code>// 响应拦截器中的 error 就是那个响应的错误对象
+console.dir(error);
+if (error.response &amp;&amp; error.response.status === 401) &#123;
+  // 校验是否有 refresh_token
+  const user = store.state.user;
+
+  if (!user || !user.refresh_token) &#123;
+    router.push(&quot;/login&quot;);
+
+    // 代码不要往后执行了
+    return;
+  &#125;
+
+  // 如果有refresh_token，则请求获取新的 token
+  try &#123;
+    const res = await axios(&#123;
+      method: &quot;PUT&quot;,
+      url: &quot;http://ttapi.research.itcast.cn/app/v1_0/authorizations&quot;,
+      headers: &#123;
+        Authorization: `Bearer $&#123;user.refresh_token&#125;`
+      &#125;
+    &#125;);
+
+    // 如果获取成功，则把新的 token 更新到容器中
+    console.log(&quot;刷新 token  成功&quot;, res);
+    store.commit(&quot;setUser&quot;, &#123;
+      token: res.data.data.token, // 最新获取的可用 token
+      refresh_token: user.refresh_token // 还是原来的 refresh_token
+    &#125;);
+
+    // 把之前失败的用户请求继续发出去
+    // config 是一个对象，其中包含本次失败请求相关的那些配置信息，例如 url、method 都有
+    // return 把 request 的请求结果继续返回给发请求的具体位置
+    return request(error.config);
+  &#125; catch (err) &#123;
+    // 如果获取失败，直接跳转 登录页
+    console.log(&quot;请求刷线 token 失败&quot;, err);
+    router.push(&quot;/login&quot;);
+  &#125;
+&#125;
+
+return Promise.reject(error);
+</code></pre>
+<p>  }<br>);</p>
+<p>export default request;</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2021/02/23/Token%E8%BF%87%E6%9C%9F%E9%97%AE%E9%A2%98%E7%9A%84%E5%A4%84%E7%90%86/" data-id="cklhzbmh20000b4u6h5ptcept" data-title="Token过期问题的处理" class="article-share-link">Share</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2021/02/23/Token%E8%BF%87%E6%9C%9F%E9%97%AE%E9%A2%98%E7%9A%84%E5%A4%84%E7%90%86/">Token过期问题的处理</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2021 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
